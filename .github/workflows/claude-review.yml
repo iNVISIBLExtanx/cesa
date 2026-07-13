@@ -1,27 +1,30 @@
 name: Claude Code Review
+
+# PARKED UNTIL PHASE 7.
+#
+# CI/CD integration with `claude -p` is a Phase 7 learning objective
+# (CCAR-F Domain 3.6). Running it now adds no learning value and distracts from
+# the actual work of Phases 1-6.
+#
+# `workflow_dispatch` means this NEVER runs automatically. It only runs if you
+# manually trigger it from the Actions tab. In Phase 7 you will change this back
+# to `pull_request` on purpose, as the lesson.
 on:
-  pull_request:
-    types: [opened, synchronize]
+  workflow_dispatch:
 
 jobs:
   review:
-    # Forks cannot read repo secrets, so the job could never succeed there.
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     env:
-      # Secrets cannot be referenced directly in a step-level `if:`, so surface
-      # presence as a plain boolean env var. Never echo the secret itself.
       HAS_ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - name: Check for API key
         run: |
           if [ "${HAS_ANTHROPIC_KEY}" != "true" ]; then
-            echo "::notice title=Claude review skipped::ANTHROPIC_API_KEY is not set in repository secrets. Add it under Settings > Secrets and variables > Actions to enable AI review. This job is a no-op, not a failure."
-          else
-            echo "API key present; running review."
+            echo "::notice::ANTHROPIC_API_KEY not set. This job is a no-op."
           fi
 
       - uses: actions/checkout@v4
@@ -38,91 +41,10 @@ jobs:
         if: env.HAS_ANTHROPIC_KEY == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Generate diff
-        if: env.HAS_ANTHROPIC_KEY == 'true'
-        run: |
-          git diff "origin/${{ github.base_ref }}...HEAD" \
-            -- '*.ts' '*.tsx' '*.json' '*.yml' '*.md' > /tmp/diff.txt || true
-          echo "Diff size: $(wc -c < /tmp/diff.txt) bytes"
-
       - name: Run review
         if: env.HAS_ANTHROPIC_KEY == 'true'
-        # An advisory review bot must never block a PR. Capture failure, log, move on.
         continue-on-error: true
-        id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ ! -s /tmp/diff.txt ]; then
-            echo "Empty diff; nothing to review."
-            exit 0
-          fi
-          # Build ONE prompt and pipe it. Do not pass a positional prompt AND pipe
-          # stdin: `claude -p` treats piped stdin as the input, so mixing both is
-          # unreliable and the diff can be silently dropped.
-          {
-            echo "Review this CESA pull request diff."
-            echo ""
-            echo "Check ONLY these, and report nothing else:"
-            echo "1. Agentic loop correctness: must branch on stop_reason. Flag any"
-            echo "   natural-language parsing or iteration cap used as the PRIMARY stop."
-            echo "2. Every tool has a Zod schema AND a structured error shape"
-            echo "   (errorCategory, isRetryable, message). Flag generic error strings."
-            echo "3. No secrets, real API keys, or credentials."
-            echo "4. Provenance preserved: claims carry PMID + source metadata."
-            echo "5. No medical-advice, diagnostic, or dosing language."
-            echo ""
-            echo "Output a markdown table: Severity | Finding | File:line | Suggested fix."
-            echo "If nothing qualifies, output exactly: No issues found."
-            echo "Only report issues you are confident about. Do not speculate."
-            echo ""
-            echo "--- DIFF ---"
-            cat /tmp/diff.txt
-          } > /tmp/prompt.txt
-
-          set +e
-          claude -p --output-format json --max-turns 3 \
-            < /tmp/prompt.txt > /tmp/review.json 2> /tmp/review.err
-          CODE=$?
-          set -e
-
-          if [ $CODE -ne 0 ]; then
-            echo "::warning title=Claude review failed::claude exited with code ${CODE}."
-            echo "--- stderr ---"
-            cat /tmp/review.err || true
-            echo "--- stdout (first 2KB) ---"
-            head -c 2000 /tmp/review.json || true
-            exit $CODE
-          fi
-
-          echo "Review completed."
-
-      - name: Post comment
-        if: env.HAS_ANTHROPIC_KEY == 'true' && steps.review.outcome == 'success'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let body = '';
-            try {
-              const raw = fs.readFileSync('/tmp/review.json', 'utf8');
-              if (!raw.trim()) {
-                core.info('No review output; skipping comment.');
-                return;
-              }
-              const out = JSON.parse(raw);
-              body = typeof out.result === 'string' ? out.result : '';
-            } catch (err) {
-              core.warning(`Could not parse review output: ${err.message}`);
-              return;
-            }
-            if (!body.trim() || body.trim() === 'No issues found.') {
-              core.info('Nothing to report.');
-              return;
-            }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '## 🤖 Claude Code review\n\n' + body,
-            });
+          echo "Phase 7 will build this out properly. Placeholder for now."
