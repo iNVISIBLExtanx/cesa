@@ -10,29 +10,40 @@ portfolio piece for Senior/Lead Gen AI roles. TypeScript throughout.
 - Every generated claim MUST cite the PMID it came from. No citation → no claim.
 - Never invent study results. If retrieval returns nothing, say so.
 
+## LEARNING MODE — read this before writing any code
+This repo exists so the human LEARNS, not so code gets produced fast.
+- The human hand-writes all CORE concept code: the agentic loop, hooks, MCP server,
+  tool schemas, retry loops, retrieval logic, eval scoring, escalation criteria.
+- Claude may write SCAFFOLDING: config, boilerplate, types, fixtures, UI, CI YAML.
+- If asked to implement a core concept, DO NOT just write it. First ask what approach
+  they intend, then review what they wrote. Explain, question, critique — do not
+  hand over the answer.
+- Every phase follows FAILURE-FIRST: build the naive version in `experiments/`,
+  measure how it fails (with real numbers), THEN build the correct version in `src/`.
+
 ## Tech stack
 - Runtime: Node 20+, TypeScript (strict), pnpm
-- LLM: @anthropic-ai/sdk, @anthropic-ai/claude-agent-sdk
-- MCP: @modelcontextprotocol/sdk (custom PubMed server in servers/pubmed)
-- Data: Supabase + pgvector; embeddings via Voyage/OpenAI (see .env.example)
-- Web: Next.js (App Router) in app/
-- Evals: RAGAS-style metrics + LLM-as-judge in evals/
+- LLM: @anthropic-ai/sdk, @anthropic-ai/claude-agent-sdk (added Phase 1)
+- MCP: @modelcontextprotocol/sdk — custom PubMed server (added Phase 2)
+- Data: Supabase + pgvector; embeddings via Voyage/OpenAI (added Phase 3)
+- Web: Next.js (App Router) in app/ (added Phase 7)
+- Evals: RAGAS-style metrics + LLM-as-judge in evals/ (added Phase 3+)
 
 ## Commands (run these, do not guess)
 - Install: `pnpm install`
-- Dev web: `pnpm dev`
 - Test: `pnpm test` (Vitest)
-- Lint/format: `pnpm lint` / `pnpm format` (ESLint + Prettier)
+- Lint: `pnpm lint` · Format: `pnpm format` · Format check: `pnpm format:check`
 - Typecheck: `pnpm typecheck`
-- Eval suite: `pnpm eval`
+- NOT YET AVAILABLE — do not run: `pnpm dev` (Phase 7), `pnpm eval` (Phase 3)
 
 ## Project layout
-- `src/agents/` coordinator + subagents (search, analyze, synthesize, report)
-- `src/tools/` tool definitions with JSON schemas + structured errors
-- `servers/pubmed/` custom MCP server (ESearch/EFetch wrappers)
-- `experiments/` deliberately naive versions — DO NOT "fix" without a LEARNING_LOG entry
-- `evals/` datasets, metrics, LLM-judge prompts
-- `app/` Next.js UI
+Only `src/` and `experiments/` exist today. Directories below are created in the phase
+that needs them — do not assume they exist.
+- `src/` shipped, correct implementations
+- `experiments/` deliberately naive versions — DO NOT "fix" in place
+- `servers/pubmed/` custom MCP server (Phase 2)
+- `evals/` datasets, metrics, LLM-judge prompts (Phase 3+)
+- `docs/adr/` architecture decision records (Phase 8)
 
 ## Conventions
 - Named exports only. Files < 300 lines; split if larger.

@@ -2,8 +2,12 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
+
 jobs:
   review:
+    # Skip PRs from forks: they cannot access repo secrets, so the job would
+    # always fail on a missing ANTHROPIC_API_KEY.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -12,36 +16,72 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
+
       - name: Generate diff
-        run: git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.json' > /tmp/diff.txt
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD \
+            -- '*.ts' '*.tsx' '*.json' '*.yml' '*.md' > /tmp/diff.txt
+          echo "Diff size: $(wc -c < /tmp/diff.txt) bytes"
+
       - name: Run review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          claude -p --output-format json \
-            "You are reviewing a CESA pull request diff. Check ONLY: (1) agentic loop
-             correctness (stop_reason, not text/iteration caps); (2) every tool has a
-             Zod schema + structured errors; (3) no secrets or real API keys;
-             (4) citation/provenance preserved; (5) no medical-advice language.
-             Report severity | finding | file:line | suggested fix. Only report issues
-             you are confident about; do not speculate. Diff follows:" \
-            < /tmp/diff.txt > /tmp/review.json
+          if [ ! -s /tmp/diff.txt ]; then
+            echo '{"result":""}' > /tmp/review.json
+            exit 0
+          fi
+          # Build ONE prompt and pipe it. Do not pass a positional prompt AND pipe
+          # stdin -- `claude -p` treats piped stdin as the input, so mixing both is
+          # unreliable and the diff may never reach the model.
+          {
+            echo "Review this CESA pull request diff."
+            echo ""
+            echo "Check ONLY these, and report nothing else:"
+            echo "1. Agentic loop correctness: must branch on stop_reason. Flag any"
+            echo "   natural-language parsing or iteration cap used as the PRIMARY stop."
+            echo "2. Every tool has a Zod schema AND a structured error shape"
+            echo "   (errorCategory, isRetryable, message). Flag generic error strings."
+            echo "3. No secrets, real API keys, or credentials."
+            echo "4. Provenance preserved: claims carry PMID + source metadata."
+            echo "5. No medical-advice, diagnostic, or dosing language."
+            echo ""
+            echo "Output a markdown table: Severity | Finding | File:line | Suggested fix."
+            echo "If nothing qualifies, output exactly: No issues found."
+            echo "Only report issues you are confident about. Do not speculate."
+            echo ""
+            echo "--- DIFF ---"
+            cat /tmp/diff.txt
+          } | claude -p --output-format json --max-turns 3 > /tmp/review.json
+
       - name: Post comment
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const out = JSON.parse(fs.readFileSync('/tmp/review.json', 'utf8'));
-            const body = out.result || out.content || 'No review output.';
-            if (body.trim()) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner, repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: "## 🤖 Claude Code review\n\n" + body
-              });
+            let body = '';
+            try {
+              const raw = fs.readFileSync('/tmp/review.json', 'utf8');
+              const out = JSON.parse(raw);
+              body = typeof out.result === 'string' ? out.result : '';
+            } catch (err) {
+              core.warning(`Could not parse review output: ${err.message}`);
+              return;
             }
+            if (!body.trim()) {
+              core.info('No review output; skipping comment.');
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '## 🤖 Claude Code review\n\n' + body,
+            });
