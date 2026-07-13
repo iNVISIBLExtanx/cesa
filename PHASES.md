@@ -35,7 +35,7 @@ mechanism. Skipping the gate defeats the purpose of the repo.
 - [x] Claude Code config: CLAUDE.md, .claude/rules/, skills, commands, .mcp.json
 - [x] CI: build (lint + typecheck + test). Claude review bot PARKED until Phase 7.
 - [x] Exam system: exams/BLUEPRINT.md, exams/SCORES.md, phase-review, phase-exam, mock-exam
-- [ ] **Smoke test passes** — `pnpm tsx scripts/smoke-test.ts` prints `stop_reason: end_turn`
+- [x] **Smoke test passes** — `pnpm tsx scripts/smoke-test.ts` prints `stop_reason: end_turn`
 
 **Covers:** D3.1, D3.2, D3.3
 
