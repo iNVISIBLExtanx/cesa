@@ -35,14 +35,33 @@ mechanism. Skipping the gate defeats the purpose of the repo.
 - [x] Claude Code config: CLAUDE.md, .claude/rules/, skills, commands, .mcp.json
 - [x] CI: build (lint + typecheck + test). Claude review bot PARKED until Phase 7.
 - [x] Exam system: exams/BLUEPRINT.md, exams/SCORES.md, phase-review, phase-exam, mock-exam
-- [x] **Smoke test passes** — `pnpm tsx scripts/smoke-test.ts` prints `stop_reason: end_turn`
+- [x] Smoke test passes — `pnpm tsx scripts/smoke-test.ts` prints `stop_reason: end_turn`
 
-**Covers:** D3.1, D3.2, D3.3
+### Covers: NOTHING. And that is deliberate.
+
+This phase was **scaffolded, not learned.** The `.claude/` config here was generated, not
+reasoned out. You cannot defend a decision you did not make — and the exam tests exactly
+that reasoning: *why* a glob-scoped rule instead of a subdirectory CLAUDE.md, *why*
+`context: fork` on that skill, *why* project scope rather than user scope. Reciting
+someone else's answer is not knowing it.
+
+**Domain 3 is earned in Phase 8**, failure-first, by breaking every piece of this config
+and rebuilding it. Until then, treat every file under `.claude/` as someone else's
+homework that happens to be sitting in your repo.
+
+The one thing genuinely learned in Phase 0 came from the CI bot breaking: `-p` for
+non-interactive mode, why an advisory step must never gate a merge, and why an `.mcp.json`
+pointing at a nonexistent binary fails on every session. That was accidental failure-first
+learning. It counts — log it.
+
+**Baseline diagnostic (do this):** run `/phase-exam 0`. Expect to score badly. That score
+is your first honest number, and it is the proof that generated config is not learned
+config.
 
 ---
 
 ## Phase 1 — The agentic loop  (tag: phase-1)
-Hand-write the loop. This is the highest-weight domain's foundation.
+Hand-write the loop. Highest-weight domain, and the first phase where you actually learn.
 
 - [ ] `experiments/01-naive-loop/` — loop that terminates by looking for "done" in the
       assistant's TEXT. Build it wrong on purpose.
@@ -72,7 +91,8 @@ categorically wrong.
       Then `{errorCategory, isRetryable, message}`. Distinguish an access failure from a
       **valid empty result**.
 - [ ] `tool_choice` experiments: `"auto"` vs `"any"` vs forced
-- [ ] `.mcp.json` with `${PUBMED_API_KEY:-}` expansion (see docs/mcp-servers.md)
+- [ ] `.mcp.json` with `${PUBMED_API_KEY:-}` expansion — **write it yourself.** Read
+      docs/mcp-servers.md once, close it, then do it from memory.
 - [ ] **GATE:** review → exam → tag
 
 **Covers:** D2.1, D2.2, D2.3, D2.4
@@ -164,22 +184,37 @@ categorically wrong.
 
 ---
 
-## Phase 8 — Claude Code hardening, sessions, ADRs  (tag: phase-8)
-- [ ] **Naive first:** put standards in `~/.claude/CLAUDE.md` → clone fresh → they VANISH
-      (user-level is not version-controlled). Move to project level. Verify with `/memory`.
-- [ ] Skill without `context: fork` → context pollution → add fork + `allowed-tools`
-- [ ] Subdirectory CLAUDE.md cannot span `src/**` and `evals/**` → `.claude/rules/` globs
+## Phase 8 — Claude Code MASTERY, sessions, ADRs  (tag: phase-8)
+
+**This is where you actually earn Domain 3 (20% of the exam).** Phase 0 handed you a
+working `.claude/` config for free. Here you break every piece of it, watch it fail, and
+rebuild it from your own reasoning. Nothing below is a re-read — every line is a
+deliberate breakage.
+
+- [ ] **Naive first:** move the project standards into `~/.claude/CLAUDE.md` → clone the
+      repo into a fresh folder → watch the standards VANISH (user-level is not
+      version-controlled). Move them back. Verify with `/memory`. **[D3.1]**
+- [ ] **Naive first:** strip `context: fork` from a skill → watch verbose output flood the
+      main conversation. Restore it. Then add `allowed-tools` and probe whether it is
+      actually enforced. **[D3.2]**
+- [ ] **Naive first:** try to enforce test conventions with a subdirectory CLAUDE.md when
+      test files live under BOTH `src/**` and `evals/**` → watch it fail to span them.
+      Rebuild as a `.claude/rules/` glob. **[D3.3]**
+- [ ] **Naive first:** move a team slash command to `~/.claude/commands/` → confirm a
+      collaborator cannot see it. **[D3.2]**
+- [ ] Rewrite `.mcp.json` from scratch, from memory: project vs user scope, `${VAR:-}`
+      expansion, and why a secret never lands in the file. **[D2.4]**
 - [ ] Grep vs Glob vs Read/Write; force an `Edit` failure on a non-unique anchor →
-      Read+Write fallback
+      Read+Write fallback. **[D2.5]**
 - [ ] Resume a stale session → wrong citations → fresh session + structured summary.
-      `/fork` to compare two synthesis strategies.
-- [ ] Long exploration → agent cites "typical patterns" → scratchpad + `/compact` +
-      state manifests + crash recovery
-- [ ] `docs/adr/` — 3+ ADRs (chunking choice, topology, model routing)
-- [ ] **Senior:** port the eval harness to Python
+      `/fork` to compare two synthesis strategies. **[D1.7]**
+- [ ] Long exploration → agent cites "typical patterns" instead of your real classes →
+      scratchpad + `/compact` + state manifests + crash recovery. **[D5.4]**
+- [ ] `docs/adr/` — 3+ ADRs (chunking choice, topology, model routing). **[S20]**
+- [ ] **Senior:** port the eval harness to Python. **[S19]**
 - [ ] **FINAL GATE:** `/mock-exam` → READY (≥720 scaled, no domain below 70%)
 
-**Covers:** D2.5, D3.1–D3.4, D5.4 · **Senior:** S19, S20
+**Covers:** D3.1, D3.2, D3.3, D3.4, D2.4, D2.5, D1.7, D5.4 · **Senior:** S19, S20
 
 ---
 
