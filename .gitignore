@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.next/
+coverage/
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+CLAUDE.local.md
+
+# logs / os
+*.log
+.DS_Store
+
+# experiments may build locally but are excluded from ship
+experiments/**/dist/
