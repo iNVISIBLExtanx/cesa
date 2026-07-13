@@ -11,6 +11,11 @@ nothing to memorise and no answers to peek at.
 - By Phase 8 every row must show `Tested ≥ 2` and `Best ≥ 4/5`. Any row that does not is
   a hole in your preparation, and `/mock-exam` will target it.
 
+**Phase 0 earns nothing.** Its `.claude/` config was scaffolded, not reasoned out. No row
+below is credited to it. Domain 3 is earned in Phase 8 by breaking that config and
+rebuilding it. You may still run `/phase-exam 0` as a baseline diagnostic — expect a bad
+score, and log it. That bad score is the proof.
+
 **Legend** — `Tested`: how many times examined. `Best`: best score on that statement
 (scale 1–5, where 4+ = solid). `—` = never tested.
 
@@ -19,37 +24,39 @@ nothing to memorise and no answers to peek at.
 ## Part A — CCAR-F blueprint (all 30 task statements)
 
 ### Domain 1 — Agentic Architecture & Orchestration (27%, ~16 questions)
-| ID | Task statement | Phase | Tested | Best |
+| ID | Task statement | Earned in | Tested | Best |
 |---|---|---|---|---|
 | D1.1 | Agentic loop design; stop_reason; termination anti-patterns | 1 | 0 | — |
 | D1.2 | Coordinator–subagent (hub-and-spoke); decomposition coverage | 4 | 0 | — |
 | D1.3 | Subagent invocation (Task tool); explicit context passing; parallel spawning | 4 | 0 | — |
-| D1.4 | Multi-step workflows; programmatic enforcement vs prompt guidance; structured handoff | 6 | 0 | — |
-| D1.5 | Agent SDK hooks (PostToolUse, tool-call interception) | 6 | 0 | — |
+| D1.4 | Multi-step workflows; programmatic enforcement vs prompt guidance; structured handoff | 5 | 0 | — |
+| D1.5 | Agent SDK hooks (PostToolUse, tool-call interception) | 5 | 0 | — |
 | D1.6 | Task decomposition strategies (fixed chaining vs dynamic adaptive) | 4 | 0 | — |
-| D1.7 | Session state, resumption, forking | 6 | 0 | — |
+| D1.7 | Session state, resumption, forking | 8 | 0 | — |
 
 ### Domain 2 — Tool Design & MCP Integration (18%, ~11 questions)
-| ID | Task statement | Phase | Tested | Best |
+| ID | Task statement | Earned in | Tested | Best |
 |---|---|---|---|---|
 | D2.1 | Effective tool descriptions; disambiguating similar tools | 2 | 0 | — |
 | D2.2 | Structured error responses; isError; access failure vs valid empty result | 2 | 0 | — |
 | D2.3 | Tool distribution (least privilege); tool_choice auto/any/forced | 2, 4 | 0 | — |
-| D2.4 | MCP server configuration; project vs user scope; ${ENV_VAR} expansion | 2 | 0 | — |
+| D2.4 | MCP server configuration; project vs user scope; ${ENV_VAR} expansion | 2, 8 | 0 | — |
 | D2.5 | Built-in tools: Grep vs Glob vs Read/Write vs Edit; Edit fallback | 8 | 0 | — |
 
 ### Domain 3 — Claude Code Configuration & Workflows (20%, ~12 questions)
-| ID | Task statement | Phase | Tested | Best |
+> **None of this is earned in Phase 0.** The config was handed to you. Phase 8 breaks it.
+
+| ID | Task statement | Earned in | Tested | Best |
 |---|---|---|---|---|
-| D3.1 | CLAUDE.md hierarchy; @import; /memory | 0, 8 | 0 | — |
-| D3.2 | Custom slash commands & skills; context: fork; allowed-tools | 0, 8 | 0 | — |
-| D3.3 | Path-specific rules; YAML paths globs vs subdirectory CLAUDE.md | 0, 8 | 0 | — |
+| D3.1 | CLAUDE.md hierarchy; @import; /memory | 8 | 0 | — |
+| D3.2 | Custom slash commands & skills; context: fork; allowed-tools | 8 | 0 | — |
+| D3.3 | Path-specific rules; YAML paths globs vs subdirectory CLAUDE.md | 8 | 0 | — |
 | D3.4 | Plan mode vs direct execution; Explore subagent | 4, 8 | 0 | — |
 | D3.5 | Iterative refinement; examples over prose; test-driven; interview pattern | 5 | 0 | — |
 | D3.6 | CI/CD; -p / --print; --output-format json; independent review instances | 7 | 0 | — |
 
 ### Domain 4 — Prompt Engineering & Structured Output (20%, ~12 questions)
-| ID | Task statement | Phase | Tested | Best |
+| ID | Task statement | Earned in | Tested | Best |
 |---|---|---|---|---|
 | D4.1 | Explicit categorical criteria over vague instructions | 3, 5 | 0 | — |
 | D4.2 | Few-shot prompting; 2–4 targeted examples; generalisation | 5 | 0 | — |
@@ -59,7 +66,7 @@ nothing to memorise and no answers to peek at.
 | D4.6 | Multi-instance & multi-pass review; self-review limitation; attention dilution | 6, 7 | 0 | — |
 
 ### Domain 5 — Context Management & Reliability (15%, ~9 questions — but appears in 4 of 6 scenarios)
-| ID | Task statement | Phase | Tested | Best |
+| ID | Task statement | Earned in | Tested | Best |
 |---|---|---|---|---|
 | D5.1 | Context preservation; progressive summarisation risk; lost-in-the-middle; case-facts block | 5 | 0 | — |
 | D5.2 | Escalation & ambiguity resolution; explicit criteria over sentiment/confidence | 3 | 0 | — |
@@ -72,11 +79,11 @@ nothing to memorise and no answers to peek at.
 
 ## Part B — Senior/Lead Gen AI Engineer topics (NOT on the exam, ON the interview)
 
-These are explicitly OUT of scope for CCAR-F and firmly IN scope for the Gapstars
-Senior/Lead Gen AI Developer role. `/phase-exam` mixes these in; `/mock-exam` keeps them
-in a clearly-labelled separate section so the exam simulation stays faithful.
+These are explicitly OUT of scope for CCAR-F and firmly IN scope for a Senior/Lead Gen AI
+Developer role. `/phase-exam` mixes these in; `/mock-exam` keeps them in a clearly-labelled
+separate section so the exam simulation stays faithful.
 
-| ID | Topic | Phase | Tested | Best |
+| ID | Topic | Earned in | Tested | Best |
 |---|---|---|---|---|
 | S1 | RAG end-to-end pipeline; where it actually breaks (retrieval, not generation) | 3 | 0 | — |
 | S2 | Chunking strategy tradeoffs (fixed / recursive / semantic / hierarchical) | 3 | 0 | — |
@@ -104,4 +111,4 @@ in a clearly-labelled separate section so the exam simulation stays faithful.
 ## Coverage rule
 
 Do not sit the real exam until every row in Part A shows `Tested ≥ 2` and `Best ≥ 4`.
-Do not walk into a Gapstars interview until every row in Part B does the same.
+Do not walk into a Senior/Lead Gen AI interview until every row in Part B does the same.
