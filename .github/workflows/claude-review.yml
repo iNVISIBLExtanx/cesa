@@ -5,42 +5,61 @@ on:
 
 jobs:
   review:
-    # Skip PRs from forks: they cannot access repo secrets, so the job would
-    # always fail on a missing ANTHROPIC_API_KEY.
+    # Forks cannot read repo secrets, so the job could never succeed there.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+    env:
+      # Secrets cannot be referenced directly in a step-level `if:`, so surface
+      # presence as a plain boolean env var. Never echo the secret itself.
+      HAS_ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
+      - name: Check for API key
+        run: |
+          if [ "${HAS_ANTHROPIC_KEY}" != "true" ]; then
+            echo "::notice title=Claude review skipped::ANTHROPIC_API_KEY is not set in repository secrets. Add it under Settings > Secrets and variables > Actions to enable AI review. This job is a no-op, not a failure."
+          else
+            echo "API key present; running review."
+          fi
+
       - uses: actions/checkout@v4
+        if: env.HAS_ANTHROPIC_KEY == 'true'
         with:
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
+        if: env.HAS_ANTHROPIC_KEY == 'true'
         with:
           node-version: '20'
 
       - name: Install Claude Code
+        if: env.HAS_ANTHROPIC_KEY == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Generate diff
+        if: env.HAS_ANTHROPIC_KEY == 'true'
         run: |
-          git diff origin/${{ github.base_ref }}...HEAD \
-            -- '*.ts' '*.tsx' '*.json' '*.yml' '*.md' > /tmp/diff.txt
+          git diff "origin/${{ github.base_ref }}...HEAD" \
+            -- '*.ts' '*.tsx' '*.json' '*.yml' '*.md' > /tmp/diff.txt || true
           echo "Diff size: $(wc -c < /tmp/diff.txt) bytes"
 
       - name: Run review
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+        # An advisory review bot must never block a PR. Capture failure, log, move on.
+        continue-on-error: true
+        id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ ! -s /tmp/diff.txt ]; then
-            echo '{"result":""}' > /tmp/review.json
+            echo "Empty diff; nothing to review."
             exit 0
           fi
           # Build ONE prompt and pipe it. Do not pass a positional prompt AND pipe
-          # stdin -- `claude -p` treats piped stdin as the input, so mixing both is
-          # unreliable and the diff may never reach the model.
+          # stdin: `claude -p` treats piped stdin as the input, so mixing both is
+          # unreliable and the diff can be silently dropped.
           {
             echo "Review this CESA pull request diff."
             echo ""
@@ -59,9 +78,27 @@ jobs:
             echo ""
             echo "--- DIFF ---"
             cat /tmp/diff.txt
-          } | claude -p --output-format json --max-turns 3 > /tmp/review.json
+          } > /tmp/prompt.txt
+
+          set +e
+          claude -p --output-format json --max-turns 3 \
+            < /tmp/prompt.txt > /tmp/review.json 2> /tmp/review.err
+          CODE=$?
+          set -e
+
+          if [ $CODE -ne 0 ]; then
+            echo "::warning title=Claude review failed::claude exited with code ${CODE}."
+            echo "--- stderr ---"
+            cat /tmp/review.err || true
+            echo "--- stdout (first 2KB) ---"
+            head -c 2000 /tmp/review.json || true
+            exit $CODE
+          fi
+
+          echo "Review completed."
 
       - name: Post comment
+        if: env.HAS_ANTHROPIC_KEY == 'true' && steps.review.outcome == 'success'
         uses: actions/github-script@v7
         with:
           script: |
@@ -69,14 +106,18 @@ jobs:
             let body = '';
             try {
               const raw = fs.readFileSync('/tmp/review.json', 'utf8');
+              if (!raw.trim()) {
+                core.info('No review output; skipping comment.');
+                return;
+              }
               const out = JSON.parse(raw);
               body = typeof out.result === 'string' ? out.result : '';
             } catch (err) {
               core.warning(`Could not parse review output: ${err.message}`);
               return;
             }
-            if (!body.trim()) {
-              core.info('No review output; skipping comment.');
+            if (!body.trim() || body.trim() === 'No issues found.') {
+              core.info('Nothing to report.');
               return;
             }
             await github.rest.issues.createComment({
