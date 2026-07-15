@@ -59,15 +59,26 @@ Do not write any code yet.
 Claude reads `CLAUDE.md` (always loaded), which points at `PHASES.md`. It will tell
 you exactly where you are.
 
+Then run `/phase-teach N` for that phase. It teaches the concepts Socratically, before
+you write any code — and never writes the concept for you, even on direct request.
+
 ## Ending any phase
 
-```
-/phase-quiz 1
-```
+Two steps, in order — do not skip either:
 
-Five CCAR-F-style scenario questions on what you actually built, one at a time. It
-scores you and says ADVANCE (4/5+) or REVIEW. **Do not start the next phase on a
-REVIEW.**
+```
+/phase-review N
+```
+An independent reviewer with no memory of writing the code. Checks failure-first
+evidence, task-statement coverage, and the exam's anti-patterns. Returns **PASS** or
+**REWORK**. A REWORK means you fix the named issue and re-run it — do not move on.
+
+```
+/phase-exam N
+```
+Only after PASS. 10 scenario questions (7 CCAR-F + 3 senior), one at a time, explaining
+why each wrong option is wrong. Returns **ADVANCE** (8/10+) or **REVIEW**. **Do not
+start the next phase on a REVIEW.**
 
 ---
 
@@ -101,8 +112,11 @@ branch gets deleted. The phase tags are the permanent history, not the branches.
 | `/compact` | Long session, context filling up. | D5.4 |
 | `/resume` | Continue yesterday's named session. | D1.7 |
 | `/fork` | Try two approaches from one baseline (e.g. two chunking strategies). | D1.7 |
-| `/phase-quiz N` | End of every phase. Non-negotiable. | all |
+| `/phase-teach N` | Start of every phase. Concepts before code. Non-negotiable. | all |
+| `/phase-review N` | End of every phase, before the exam. PASS or REWORK. | all |
+| `/phase-exam N` | End of every phase, after review passes. ADVANCE (8/10+) or REVIEW. | all |
 | `/new-experiment name` | Scaffold the next `experiments/NN-name/` folder. | — |
+| `/evidence-review [path]` | Ad hoc, once CESA generates real output (Phase 5+): audits a summary for citation coverage, grounding, and safety language. Not part of the per-phase gate. | D5.6, D1.4 |
 
 You are not just *using* these. Using them **is** how you study Domain 3 (20% of the exam).
 
@@ -115,12 +129,10 @@ alternatives. Covers CCAR-F D1.1.
 
 ### Day 1 — Understand (no code)
 ```
-I am on Phase 1: the agentic loop. Do NOT write code.
-Explain how the Anthropic Messages API tool-use loop works: what stop_reason values
-exist, what I do on each, and how tool results get appended to the conversation.
-Then explain the three termination anti-patterns and why each fails.
-Quiz me on it before we move on.
+/phase-teach 1
 ```
+Socratic walkthrough of `stop_reason` handling, the three termination anti-patterns, and
+why each fails — with a spot-check question before it says READY TO BUILD.
 End of session: write 3 sentences in `LEARNING_LOG.md` explaining the loop in your own
 words. If you cannot, repeat Day 1.
 
@@ -155,7 +167,7 @@ Run the same 20 questions. Expect `0/20` failures. Write that number down.
 - Write a Vitest test that mocks the Anthropic client and asserts the loop continues on
   `tool_use` and stops on `end_turn`.
 - Tick Phase 1 in `PHASES.md`, update the "Current status" line.
-- `/phase-quiz 1`. Score 4/5+ to advance.
+- `/phase-review 1` → PASS. `/phase-exam 1` → ADVANCE (8/10+).
 - Commit, PR, merge, `git tag phase-1`.
 
 **When you can explain why an iteration cap is a safety net and not a stop condition —

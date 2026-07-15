@@ -59,6 +59,11 @@ writes your concept code.**
 Plus `/mock-exam` at Phase 8: 60 questions, 4 of 6 scenarios, 120 minutes, scored against
 the real 720/1000 bar, with a separate 15-question senior section.
 
+One more skill, but not part of this loop: `/evidence-review` audits CESA's *own generated
+output* (the cited evidence briefs it produces from Phase 3+) for citation coverage,
+grounding, and safety language. It checks the product you're building, not your learning
+progress — run it ad hoc once there's real output to check, starting around Phase 5.
+
 ### The loop, every phase, without exception
 
 ```
